@@ -18,9 +18,18 @@ module Spree
 
     delegate :name, to: :option_value
     delegate :presentation, to: :option_value
+    
+    def currency
+        Spree::Config[:currency]
+    end
 
     def cost_price
       cost_price_modifier || price_modifier || 0
     end
+
+    extend DisplayMoney
+    money_methods :cost_price
+
+    
   end
 end
