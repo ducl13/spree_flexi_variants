@@ -34,6 +34,14 @@ module Spree
       str.join('\n')
     end
 
+    def copy_price
+      if variant
+        update_price if price.nil? || base_price.nil?
+        self.cost_price = variant.cost_price if cost_price.nil?
+        self.currency = variant.currency if currency.nil?
+      end
+    end
+
     def update_price
       self.price = variant.price_including_vat_for(tax_zone: tax_zone)+ self.ad_hoc_option_values.map(&:cost_price).inject(0, :+)
       self.base_price = variant.price_including_vat_for(tax_zone: tax_zone)
