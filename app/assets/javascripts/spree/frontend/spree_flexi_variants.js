@@ -1,5 +1,7 @@
 //= require jquery.formatCurrency-1.4.0.min
 //= require i18n/jquery.formatCurrency.all
+//= require spree/frontend/product
+//= require spree/frontend/cart
 //= require_self
 
 Spree.ready(function () {
@@ -12,7 +14,7 @@ Spree.ready(function () {
   });
   // image customizations need multipart
   $("#cart-form form").attr("enctype","multipart/form-data");
-  $("#cart-form form").validate();
+//  $("#cart-form form").validate();
 });
 // 'replacement' is always a pure, empty file input
 function attachFileInputSwap(current, replacement) {

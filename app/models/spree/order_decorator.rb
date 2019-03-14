@@ -5,12 +5,12 @@ module Spree
     def add_variant(variant, quantity = 1, options = {})
       # grab_line_item_by_variant???
       current_item = find_line_item_by_variant(variant, options)
+
       if current_item
         current_item.quantity += quantity
         current_item.save
       else
         current_item = LineItem.new(quantity: quantity, variant: variant, options: options)
-
         product_customizations_ids = ( !!options[:product_customizations] ? options[:product_customizations].map{|ids| ids.first.to_i} : [] )
         product_customizations_values = product_customizations_ids.map do |cid|
             ProductCustomization.find(product_customization_type_id: cid)
@@ -30,7 +30,6 @@ module Spree
         offset_price = product_option_values.map(&:price_modifier).compact.sum + product_customizations_values.map {|product_customization| product_customization.price(variant)}.sum
 
         current_item.price = variant.price + offset_price
-
         self.line_items << current_item
       end
       current_item
@@ -47,7 +46,7 @@ module Spree
 
     def find_line_item_by_variant(variant, options = {})
       ad_hoc_option_value_ids = ( !!options[:ad_hoc_option_values] ? options[:ad_hoc_option_values] : [] )
-      product_customizations = ( !!options[:product_customizations] ? options[:product_customizations].map{|ids| ids.first.to_i} : [] )
+      product_customizations = ( !!options[:product_customizations] ? options[:product_customizations] : [] )
       line_items.detect do |li|
         li.variant_id == variant.id &&
            matching_configurations(li.ad_hoc_option_values, ad_hoc_option_value_ids) &&
@@ -97,13 +96,13 @@ module Spree
     private
 
     # produces a list of [customizable_product_option.id,value] pairs for subsequent comparison
-    # def customization_pairs(product_customizations)
-    #   pairs= product_customizations.map(&:customized_product_options).flatten.map do |m|
-    #     [m.customizable_product_option.id, m.value.present? ? m.value : m.customization_image.to_s ]
-    #   end
+    def customization_pairs(product_customizations)
+      pairs= product_customizations.map(&:customized_product_options).flatten.map do |m|
+        [m.customizable_product_option.id, m.value.present? ? m.value : m.customization_image.to_s ]
+      end
 
-    #   Set.new pairs
-    # end
+      Set.new pairs
+    end
 
     def matching_configurations(existing_povs, new_povs)
       # if there aren't any povs, there's a 'match'

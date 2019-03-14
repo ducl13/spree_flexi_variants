@@ -3,6 +3,7 @@ module Spree
     has_many :ad_hoc_option_values_line_items, dependent: :destroy
     has_many :ad_hoc_option_values, through: :ad_hoc_option_values_line_items
     has_many :product_customizations, dependent: :destroy
+    money_methods :base_price
 
     def options_text
       str = Array.new
@@ -33,12 +34,25 @@ module Spree
       str.join('\n')
     end
 
-    def cost_price
-      (variant.cost_price || 0) + ad_hoc_option_values.map(&:cost_price).inject(0, :+)
+    def copy_price
+      if variant
+        update_price if price.nil? || base_price.nil?
+        self.cost_price = variant.cost_price if cost_price.nil?
+        self.currency = variant.currency if currency.nil?
+      end
     end
 
-    def cost_money
-      Spree::Money.new(cost_price, currency: currency)
+    def update_price
+      self.price = variant.price_including_vat_for(tax_zone: tax_zone)+ self.ad_hoc_option_values.map(&:cost_price).inject(0, :+)
+      self.base_price = variant.price_including_vat_for(tax_zone: tax_zone)
     end
+
+    # def cost_price
+    #   (variant.cost_price || 0) + ad_hoc_option_values.map(&:cost_price).inject(0, :+)
+    # end
+
+    # def cost_money
+    #   Spree::Money.new(cost_price, currency: currency)
+    # end
   end
 end
