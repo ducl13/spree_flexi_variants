@@ -1,4 +1,4 @@
-<% if SpreeFlexiVariants::Config[:use_javascript_pricing_updates] %>
+<% if @product && SpreeFlexiVariants::Config[:use_javascript_pricing_updates] %>
   <%= content_for :flexi_variants_body_js do %>
     <%# didn't use javascript_tag here so we don't confuse deface %>
     <script type="text/javascript">
@@ -123,7 +123,7 @@
       var cur_price = base_price + cur_variant_price_diff + cur_configuration_price + cur_customization_price;
 
       var region = $.formatCurrency.getRegionFromCurrency("<%= @product.currency %>");
-      $('.price.selling').text(cur_price.toFixed(2)).formatCurrency({region: region});
+      $('.price').text(cur_price.toFixed(2)).formatCurrency({region: region});
     }
 
     //]]>

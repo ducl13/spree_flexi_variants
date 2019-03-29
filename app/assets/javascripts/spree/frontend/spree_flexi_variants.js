@@ -26,3 +26,54 @@ function attachFileInputSwap(current, replacement) {
     attachFileInputSwap(replacement, clone);
   });
 }
+
+
+//= require spree/api/storefront/cart
+//= require spree/frontend/serialize_json
+
+
+SpreeAPI.Storefront.addToCartWithAdhoc = function(formId,cartBtnId,variantId, quantity,cb,ecb){
+    event.preventDefault()
+    let $form = $(formId);
+
+    if($form.length) {
+        let ser = $(formId).serializeJSON();
+        let adHocOptionValueIds = null;
+
+        if(ser.ad_hoc_option_values) {
+            adHocOptionValueIds = Object.values(ser.ad_hoc_option_values);
+
+            if(adHocOptionValueIds.length !== adHocOptionValueIds.filter(i=>i).length){
+                if(ecb) {
+                    ecb('ad_hoc_option_value');
+                }
+            }
+        }
+
+        let addToCartButton = $(cartBtnId);
+
+        Spree.ensureCart(
+            function () {
+                SpreeAPI.Storefront.addToCart(
+                    variantId,
+                    quantity,
+                    {ad_hoc_option_value_ids: adHocOptionValueIds}, // options hash - you can pass additional parameters here, your backend
+                    // needs to be aware of those, see API docs:
+                    // https://github.com/spree/spree/blob/master/api/docs/v2/storefront/index.yaml#L42
+                    function (res) {
+                        // redirect with `variant_id` is crucial for analytics tracking
+                        // provided by `spree_analytics_trackers` extension
+                        cb(res)
+
+                    },
+                    function (error) {
+                        alert(error)
+                    } // failure callback for 422 and 50x errors
+                )
+            }
+        )
+    }else{
+        alert('something went wrong, form not found');
+    }
+
+}
