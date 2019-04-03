@@ -1,7 +1,8 @@
 module Spree
   CompareLineItems.class_eval do
     def compare(_line_item, _options)
-      opts = _options["ad_hoc_option_value_ids"].compact.reject{|o|o==""}
+      opts = _options["ad_hoc_option_value_ids"]||[]
+      opts =   opts.compact.reject{|o|o==""}
       ret = true
 
       if opts.present?
