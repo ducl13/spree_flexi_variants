@@ -4,7 +4,9 @@
     <script type="text/javascript">
       //<![CDATA[
       // First I need to set up a mapping for the variants on the screen so I can easily grab their prices
+
       var variant_price_map = {};
+      var selectedProduct = null;
 
       <% if @product.has_variants? %>
         <% @product.variants.active.each_with_index do |variant, index| %>
@@ -20,11 +22,16 @@
       var base_price = <%= @product.price %>;
 
       // keep track of ad_hoc adjustments
-      var price_modifier_map = {};
+      if(!price_modifier_map) {
+          var price_modifier_map = {};
+      }
 
       <% @product.ad_hoc_option_types.each do |product_option_type| %>
         <% product_option_type.option_values.each do |product_option_value| %>
-          price_modifier_map[<%= product_option_value.id %>] = <%= product_option_value.price_modifier %>;
+          if(!price_modifier_map[<%=@product.id%>]){
+              price_modifier_map[<%=@product.id%>] = {};
+          }
+          price_modifier_map[<%=@product.id%>][<%= product_option_value.id %>] = <%= product_option_value.price_modifier %>;
         <% end %>
       <% end %>
 
@@ -46,7 +53,7 @@
 
         // 'watch' our configurations
         $('.ad-hoc-option-select').change(function() {
-
+            selectedProduct = $(this).closest('form').find('#product_id').val();
           // get _every_ option drop down and recalculate product price
           // do this immediately, since we are not waiting on the results of the exlusions post
           updatePrice();
@@ -84,17 +91,17 @@
       $("select.ad-hoc-option-select, input:checked.ad-hoc-option-select").each(function() {
         // the prompt: 'None' in the select tag yields an empty string, which I can't use in the price calcuation
         var val = $(this).val();
-
+        console.log(price_modifier_map);
         // now in case we are a multiple select, de-array
         if ($.isArray(val)) {
           $.each(val, function(index, value) {
             if (isNumeric(value)) {
-              configuration_price += price_modifier_map[value];
+              configuration_price += price_modifier_map[selectedProduct][value];
             }
           });
         } else {
           if (isNumeric(val)) {
-            configuration_price += price_modifier_map[val];
+            configuration_price += price_modifier_map[selectedProduct][val];
           }
         }
       });
@@ -121,7 +128,6 @@
       var cur_configuration_price = compute_configuration_price();
       var cur_customization_price = compute_customization_price();
       var cur_price = base_price + cur_variant_price_diff + cur_configuration_price + cur_customization_price;
-
       var region = $.formatCurrency.getRegionFromCurrency("<%= @product.currency %>");
       $('.price').text(cur_price.toFixed(2)).formatCurrency({region: region});
     }
