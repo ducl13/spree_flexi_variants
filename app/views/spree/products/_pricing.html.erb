@@ -1,139 +1,97 @@
-<% if @product && SpreeFlexiVariants::Config[:use_javascript_pricing_updates] %>
-  <%= content_for :flexi_variants_body_js do %>
-    <%# didn't use javascript_tag here so we don't confuse deface %>
-    <script type="text/javascript">
-      //<![CDATA[
-      // First I need to set up a mapping for the variants on the screen so I can easily grab their prices
+<script type="text/javascript">
+    function Pricing(){
+        let that = this;
+        this.variantPriceMap;
+        this.priceModifierMap;
+        this.basePrice;
+        this.product;
+        this.finalPrice;
+        this.currency;
+        this.targetPriceClassPrefix='.js-product-price-';
+        this.productContainerPrefix='.js-product';
 
-      var variant_price_map = {};
-      var selectedProduct = null;
+        this.init = (product,price,variantPriceMap,priceModifierMap,currency)=>{
+            that.variantPriceMap  = variantPriceMap;
+            that.priceModifierMap = priceModifierMap;
+            that.productContainerId = `${that.productContainerPrefix}-${product.id}`;
+            that.currency  = currency;
+            that.product   = product;
+            that.basePrice = price;
+            that.targetPriceClass = `${that.targetPriceClassPrefix}-${product.id}`;
 
-      <% if @product.has_variants? %>
-        <% @product.variants.active.each_with_index do |variant, index| %>
-          variant_price_map[<%= variant.id %>] = <%= variant.price %>;
-        <% end %>
-      <% end %>
-
-      // we start off the page w/ a known base price, a known set of
-      // possible configurations (ad_hoc_option_values), and no customizations
-
-      // 'updatePrice()' takes the base price + current 'configuration' adjustments + 'customization' adjustments
-
-      var base_price = <%= @product.price %>;
-
-      // keep track of ad_hoc adjustments
-      if(!price_modifier_map) {
-          var price_modifier_map = {};
-      }
-
-      <% @product.ad_hoc_option_types.each do |product_option_type| %>
-        <% product_option_type.option_values.each do |product_option_value| %>
-          if(!price_modifier_map[<%=@product.id%>]){
-              price_modifier_map[<%=@product.id%>] = {};
-          }
-          price_modifier_map[<%=@product.id%>][<%= product_option_value.id %>] = <%= product_option_value.price_modifier %>;
-        <% end %>
-      <% end %>
-
-
-      var delay = (function(){
-        var timer = 0;
-        return function(callback, ms){
-          clearTimeout (timer);
-          timer = setTimeout(callback, ms);
+            that.updatePrice(); //update on startup;
         };
-      })();
 
-      Spree.ready(function() {
+        this.calculatePrice = ()=>{
+            const cur_variant_price_diff  = that.compute_variant_price_diff();
+            const cur_configuration_price = that.compute_configuration_price();
+            const cur_customization_price = that.compute_customization_price();
+            that.finalPrice = that.basePrice + cur_variant_price_diff + cur_configuration_price + cur_customization_price;
+        };
 
-        // watch for variant changes
-        $("#product-variants input[type='radio']").change(function() {
-          updatePrice();
-        });
+        this.updatePrice = ()=>{
+            that.calculatePrice();
+            const region = $.formatCurrency.getRegionFromCurrency(that.currency);
+            $(that.targetPriceClass).text(that.finalPrice.toFixed(2)).formatCurrency({region:region});
+        };
 
-        // 'watch' our configurations
-        $('.ad-hoc-option-select').change(function() {
-            selectedProduct = $(this).closest('form').find('#product_id').val();
-          // get _every_ option drop down and recalculate product price
-          // do this immediately, since we are not waiting on the results of the exlusions post
-          updatePrice();
-        });
+        this.isNumeric = input=>((input - 0) == input && input.length > 0);
 
-        if ($('.ad-hoc-option-select').length) {
-          updatePrice(); // set the initial price
+        this.compute_variant_price_diff = ()=>{
+            //to be implemented.
+            return 0;
+        };
+
+        this.compute_configuration_price = ()=>{
+            let configuration_price = 0;
+
+            $(`${that.productContainerId} select.ad-hoc-option-select, ${that.productContainerId} input:checked.ad-hoc-option-select`).each(function() {
+                // the prompt: 'None' in the select tag yields an empty string, which I can't use in the price calcuation
+                let val = $(this).val();
+
+                // now in case we are a multiple select, de-array
+                if ($.isArray(val)) {
+                    $.each(val, function(index, value) {
+                        if (that.isNumeric(value)) {
+                            configuration_price += that.priceModifierMap[value];
+                        }
+                    });
+                } else {
+                    if (that.isNumeric(val)) {
+                        configuration_price += that.priceModifierMap[val];
+                    }
+                }
+            });
+
+            return configuration_price;
         }
-      }); // ready
 
-    // stolen from http://stackoverflow.com/questions/18082/validate-numbers-in-javascript-isnumeric
-    function isNumeric(input) {
-      return (input - 0) == input && input.length > 0;
+        this.compute_customization_price = ()=>{
+            //to be implemented
+            return 0;
+        };
+
+        $('body').on('change', "#product-variants input[type='radio']", this.updatePrice);
+        $('body').on('change', ".ad-hoc-option-select", this.updatePrice);
     }
 
-    function compute_variant_price_diff(base_price) {
-      var variant_price = 0;
+    $(function(){
+        let variant_price_map  = {};
+        let price_modifier_map = {};
 
-      $("#product-variants input[type='radio']:checked").each (function() {
-        variant_price = variant_price_map[$(this).val()];
-      });
+        <% if @product.has_variants? %>
+          <% @product.variants.active.each_with_index do |variant, index| %>
+            variant_price_map[<%= variant.id %>] = <%= variant.price %>;
+          <% end %>
+        <% end %>
 
-      <% if @product.has_variants? %>
-        return variant_price - base_price;
-      <% else %>
-        return variant_price;  // don't return a negative number if we don't have any variants
-      <% end %>
+        <% @product.ad_hoc_option_types.each do |product_option_type| %>
+          <% product_option_type.option_values.each do |product_option_value| %>
+            price_modifier_map[<%= product_option_value.id %>] = <%= product_option_value.price_modifier %>;
+          <% end %>
+        <% end %>
 
-    }
-
-    function compute_configuration_price() {
-      var configuration_price = 0;
-
-      // for selects or checkboxes
-      $("select.ad-hoc-option-select, input:checked.ad-hoc-option-select").each(function() {
-        // the prompt: 'None' in the select tag yields an empty string, which I can't use in the price calcuation
-        var val = $(this).val();
-        console.log(price_modifier_map);
-        // now in case we are a multiple select, de-array
-        if ($.isArray(val)) {
-          $.each(val, function(index, value) {
-            if (isNumeric(value)) {
-              configuration_price += price_modifier_map[selectedProduct][value];
-            }
-          });
-        } else {
-          if (isNumeric(val)) {
-            configuration_price += price_modifier_map[selectedProduct][val];
-          }
-        }
-      });
-      return configuration_price;
-    }
-
-    function compute_customization_price() {
-      var price = 0;
-
-      // for selects or checkboxes
-      $(".customization_price").each(function() {
-        var val = $(this).val();
-
-        if (isNumeric(val)) {
-          price += parseFloat(val);
-        }
-      });
-
-      return price;
-    }
-
-    function updatePrice() {
-      var cur_variant_price_diff = compute_variant_price_diff(base_price);
-      var cur_configuration_price = compute_configuration_price();
-      var cur_customization_price = compute_customization_price();
-      var cur_price = base_price + cur_variant_price_diff + cur_configuration_price + cur_customization_price;
-      var region = $.formatCurrency.getRegionFromCurrency("<%= @product.currency %>");
-      $('.price').text(cur_price.toFixed(2)).formatCurrency({region: region});
-    }
-
-    //]]>
-    </script>
-  <% end %>
-<%# end if SpreeFlexiVariants::Config[:use_javascript_pricing_updates] %>
-<% end %>
+        let pricing = new Pricing();
+        pricing.init(<%= raw @product.to_json %>,<%= @product.price %>,variant_price_map,price_modifier_map,"<%= @product.currency %>");
+    })
+</script>
