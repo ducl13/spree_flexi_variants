@@ -5,6 +5,8 @@ module Spree
     has_many :product_customizations, dependent: :destroy
     money_methods :base_price
 
+    alias_method :old_ad_hoc_option_values, :ad_hoc_option_values
+
     def options_text
       str = Array.new
       unless self.ad_hoc_option_values.empty?
@@ -54,5 +56,19 @@ module Spree
     # def cost_money
     #   Spree::Money.new(cost_price, currency: currency)
     # end
+    
+    # Sort by the product ad hoc option types position
+    def ad_hoc_option_values
+      product_ad_hoc_option_types = {}
+      product.ad_hoc_option_types.map do |ad_hoc_option_type|
+        product_ad_hoc_option_types[ad_hoc_option_type.id] = ad_hoc_option_type.position
+      end
+  
+      new_order_ad_hoc_option_values = old_ad_hoc_option_values.sort do |a, b|
+        product_ad_hoc_option_types[a.ad_hoc_option_type_id] <=> product_ad_hoc_option_types[b.ad_hoc_option_type_id]
+      end
+      
+      return new_order_ad_hoc_option_values
+    end
   end
 end
