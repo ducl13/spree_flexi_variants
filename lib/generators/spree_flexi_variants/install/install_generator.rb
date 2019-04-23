@@ -4,6 +4,7 @@ module SpreeFlexiVariants
 
       def add_javascripts
         append_file "vendor/assets/javascripts/spree/frontend/all.js", "//= require spree/frontend/spree_flexi_variants\n"
+        append_file "vendor/assets/javascripts/spree/frontend/all.js", "//= require spree/frontend/serialize_json\n"
         append_file "vendor/assets/javascripts/spree/backend/all.js", "//= require spree/backend/spree_flexi_variants\n"
       end
 
