@@ -5,7 +5,6 @@ git_source(:github) do |repo_name|
   "https://github.com/#{repo_name}.git"
 end
 
-gem 'carrierwave', '>= 1.3.1', '< 2.0'
 gem 'spree_core', github: 'spree/spree', branch: 'master'
 gem 'spree_backend', github: 'spree/spree', branch: 'master'
 # Provides basic authentication functionality for testing parts of your engine
