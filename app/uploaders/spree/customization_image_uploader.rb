@@ -1,3 +1,6 @@
+=begin
+# line 5 causes issue.  Customization not used, and not made to work yet anyways.
+#
 # encoding: utf-8
 require 'carrierwave'
 # feel like this should switch to paperclip and just use sprees defaults
@@ -54,3 +57,4 @@ module Spree
 
   end
 end
+=end
