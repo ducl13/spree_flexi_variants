@@ -42,7 +42,7 @@ SpreeAPI.Storefront.addToCartWithAdhoc = function (formId, cartBtnId, variantId,
         let ser = $(formId).serializeJSON();
 
         if (ser.ad_hoc_option_values) {
-            adHocOptionValueIds = Object.values(ser.ad_hoc_option_values);
+            adHocOptionValueIds = Object.values(ser.ad_hoc_option_values).map(str => parseInt(str));
 
             if (adHocOptionValueIds.length !== adHocOptionValueIds.filter(i => i).length) {
                 if (ecb) {
