@@ -21,7 +21,7 @@ module Spree
 
         # find, and add the configurations, if any.  these have not been fetched from the db yet.              line_items.first.variant_id
         # we postponed it (performance reasons) until we actually knew we needed them
-        ad_hoc_option_value_ids = ( !!options[:ad_hoc_option_values] ? options[:ad_hoc_option_values] : [] )
+        ad_hoc_option_value_ids = ( !!options[:ad_hoc_option_value_ids] ? options[:ad_hoc_option_value_ids] : [] )
         product_option_values = ad_hoc_option_value_ids.map do |cid|
           AdHocOptionValue.find(cid)
         end
@@ -45,7 +45,7 @@ module Spree
     # https://github.com/spree/spree/blob/625b42ecc2c3d5c6d0ec463a8f718ce16b80d89a/core/app/models/spree/order.rb#L265
 
     def find_line_item_by_variant(variant, options = {})
-      ad_hoc_option_value_ids = ( !!options[:ad_hoc_option_values] ? options[:ad_hoc_option_values] : [] )
+      ad_hoc_option_value_ids = ( !!options[:ad_hoc_option_value_ids] ? options[:ad_hoc_option_value_ids] : [] )
       product_customizations = ( !!options[:product_customizations] ? options[:product_customizations] : [] )
       line_items.detect do |li|
         li.variant_id == variant.id &&
@@ -63,9 +63,7 @@ module Spree
         # Make sure you allow any extensions to chime in on whether or
         # not the extension-specific parts of the line item match
         current_line_item = self.line_items.detect do |my_li|
-          my_li.variant == other_order_line_item.variant && self.line_item_comparison_hooks.all? do |hook|
-            self.send(hook, my_li, other_order_line_item.serializable_hash)
-          end
+          my_li.variant == other_order_line_item.variant && self.line_item_options_match(my_li, other_order_line_item.serializable_hash)
         end
         if current_line_item
           current_line_item.quantity += other_order_line_item.quantity
@@ -77,7 +75,7 @@ module Spree
       end
       order.line_items.each do |line_item|
         self.add_variant(line_item.variant, line_item.quantity, {
-          ad_hoc_option_values: line_item.ad_hoc_option_value_ids,
+          ad_hoc_option_value_ids: line_item.ad_hoc_option_value_ids,
           product_customizations: line_item.product_customizations
         })
       end
