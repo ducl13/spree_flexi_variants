@@ -8,11 +8,14 @@
         this.finalPrice;
         this.currency;
         this.targetPriceClassPrefix='.js-product-price';
-        this.productContainerPrefix='#js-product-adhoc-container';
+        this.productAdhocContainerPrefix='#js-product-adhoc-container';
+        this.productContainerPrefix='#js-order-populate-form';
+
 
         this.init = (product,price,variantPriceMap,priceModifierMap,currency)=>{
             that.variantPriceMap  = variantPriceMap;
             that.priceModifierMap = priceModifierMap;
+            that.productAdhocContainerId = `${that.productAdhocContainerPrefix}-${product.id}`;
             that.productContainerId = `${that.productContainerPrefix}-${product.id}`;
             that.currency  = currency;
             that.product   = product;
@@ -20,13 +23,16 @@
             that.targetPriceClass = `${that.targetPriceClassPrefix}-${product.id}`;
 
             that.updatePrice(); //update on startup;
+
+            $('body').on('change', `${that.productContainerId} .product-variants input[type='radio']`, this.updatePrice);
+            $('body').on('change', `${that.productContainerId} .ad-hoc-option-select`, this.updatePrice);
         };
 
         this.calculatePrice = ()=>{
             const cur_variant_price_diff  = that.compute_variant_price_diff();
             const cur_configuration_price = that.compute_configuration_price();
             const cur_customization_price = that.compute_customization_price();
-            that.finalPrice = that.basePrice + cur_variant_price_diff + cur_configuration_price + cur_customization_price;
+            that.finalPrice = that.basePrice + cur_variant_price_diff + cur_configuration_price + cur_customization_price
         };
 
         this.updatePrice = ()=>{
@@ -38,14 +44,25 @@
         this.isNumeric = input=>((input - 0) == input && input.length > 0);
 
         this.compute_variant_price_diff = ()=>{
-            //to be implemented.
-            return 0;
+            let selectedVariant = $(`${that.productContainerId} .product-variants input[type='radio']:checked`);
+            let diff = 0;
+
+            if(selectedVariant.length){
+                const variantPrice = selectedVariant.data('price-no-currency');
+                diff = variantPrice - that.basePrice;
+            }
+
+            if(diff < 0){
+                diff = 0;
+            }
+
+            return diff;
         };
 
         this.compute_configuration_price = ()=>{
             let configuration_price = 0;
 
-            $(`${that.productContainerId} select.ad-hoc-option-select, ${that.productContainerId} input:checked.ad-hoc-option-select`).each(function() {
+            $(`${that.productAdhocContainerId} select.ad-hoc-option-select, ${that.productAdhocContainerId} input:checked.ad-hoc-option-select`).each(function() {
                 // the prompt: 'None' in the select tag yields an empty string, which I can't use in the price calcuation
                 let val = $(this).val();
 
@@ -71,8 +88,7 @@
             return 0;
         };
 
-        $('body').on('change', "#product-variants input[type='radio']", this.updatePrice);
-        $('body').on('change', ".ad-hoc-option-select", this.updatePrice);
+
     }
 
     $(function(){
