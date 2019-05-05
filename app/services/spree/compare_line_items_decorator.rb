@@ -6,11 +6,7 @@ module Spree
       ret = true
 
       if opts.present?
-        if _line_item.ad_hoc_option_value_ids.empty?
-          ret = false
-        else
-          ret = _line_item.ad_hoc_option_value_ids.map(&:to_i).all?{|obj|opts.include?(obj)}
-        end
+        ret = (_line_item.ad_hoc_option_value_ids.empty? ? false : _line_item.ad_hoc_option_value_ids.map(&:to_i).all?{|obj|opts.include?(obj)})
       else
         ret = false unless _line_item.ad_hoc_option_value_ids.empty?
       end
