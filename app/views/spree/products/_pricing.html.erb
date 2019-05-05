@@ -13,14 +13,16 @@
 
 
         this.init = (product,price,variantPriceMap,priceModifierMap,currency)=>{
-            that.variantPriceMap  = variantPriceMap;
-            that.priceModifierMap = priceModifierMap;
-            that.productAdhocContainerId = `${that.productAdhocContainerPrefix}-${product.id}`;
+            that.variantPriceMap    = variantPriceMap;
+            that.priceModifierMap   = priceModifierMap;
             that.productContainerId = `${that.productContainerPrefix}-${product.id}`;
+
+            that.productAdhocContainerId = `${that.productAdhocContainerPrefix}-${product.id}`;
+            that.targetPriceClass        = `${that.targetPriceClassPrefix}-${product.id}`;
+
             that.currency  = currency;
             that.product   = product;
             that.basePrice = price;
-            that.targetPriceClass = `${that.targetPriceClassPrefix}-${product.id}`;
 
             that.updatePrice(); //update on startup;
 
