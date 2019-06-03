@@ -12,13 +12,13 @@
         this.productContainerPrefix='#js-order-populate-form';
 
 
-        this.init = (product,price,variantPriceMap,priceModifierMap,currency)=>{
+        this.init = function(product,price,variantPriceMap,priceModifierMap,currency){
             that.variantPriceMap    = variantPriceMap;
             that.priceModifierMap   = priceModifierMap;
-            that.productContainerId = `${that.productContainerPrefix}-${product.id}`;
+            that.productContainerId = that.productContainerPrefix + '-' + String(product.id);
 
-            that.productAdhocContainerId = `${that.productAdhocContainerPrefix}-${product.id}`;
-            that.targetPriceClass        = `${that.targetPriceClassPrefix}-${product.id}`;
+            that.productAdhocContainerId = that.productAdhocContainerPrefix + '-' + String(product.id);
+            that.targetPriceClass        = that.targetPriceClassPrefix + '-' + String(product.id);
 
             that.currency  = currency;
             that.product   = product;
@@ -26,27 +26,27 @@
 
             that.updatePrice(); //update on startup;
 
-            $('body').on('change', `${that.productContainerId} .product-variants input[type='radio']`, this.updatePrice);
-            $('body').on('change', `${that.productContainerId} .ad-hoc-option-select`, this.updatePrice);
+            $('body').on('change', String(that.productContainerId) + " .product-variants input[type='radio']", this.updatePrice);
+            $('body').on('change', String(that.productContainerId) + " .ad-hoc-option-select", this.updatePrice);
         };
 
-        this.calculatePrice = ()=>{
+        this.calculatePrice = function(){
             const cur_variant_price_diff  = that.compute_variant_price_diff();
             const cur_configuration_price = that.compute_configuration_price();
             const cur_customization_price = that.compute_customization_price();
             that.finalPrice = that.basePrice + cur_variant_price_diff + cur_configuration_price + cur_customization_price
         };
 
-        this.updatePrice = ()=>{
+        this.updatePrice = function(){
             that.calculatePrice();
             const region = $.formatCurrency.getRegionFromCurrency(that.currency);
             $(that.targetPriceClass).text(that.finalPrice.toFixed(2)).formatCurrency({region:region});
         };
 
-        this.isNumeric = input=>((input - 0) == input && input.length > 0);
+        this.isNumeric = function(input){ return ((input - 0) == input && input.length > 0); };
 
-        this.compute_variant_price_diff = ()=>{
-            let selectedVariant = $(`${that.productContainerId} .product-variants input[type='radio']:checked`);
+        this.compute_variant_price_diff = function(){
+            let selectedVariant = $(String(that.productContainerId) + " .product-variants input[type='radio']:checked");
             let diff = 0;
 
             if(selectedVariant.length){
@@ -61,10 +61,10 @@
             return diff;
         };
 
-        this.compute_configuration_price = ()=>{
+        this.compute_configuration_price = function(){
             let configuration_price = 0;
 
-            $(`${that.productAdhocContainerId} select.ad-hoc-option-select, ${that.productAdhocContainerId} input:checked.ad-hoc-option-select`).each(function() {
+            $(String(that.productAdhocContainerId) + " select.ad-hoc-option-select", String(that.productAdhocContainerId) + " input:checked.ad-hoc-option-select").each(function() {
                 // the prompt: 'None' in the select tag yields an empty string, which I can't use in the price calcuation
                 let val = $(this).val();
 
@@ -85,7 +85,7 @@
             return configuration_price;
         }
 
-        this.compute_customization_price = ()=>{
+        this.compute_customization_price = function(){
             //to be implemented
             return 0;
         };
